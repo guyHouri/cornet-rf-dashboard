@@ -1,0 +1,15 @@
+{
+  "session_id": "2026-11-03-bedroom-night",
+  "start_time": "2026-11-03T22:00:00+02:00",
+  "end_time": "2026-11-04T22:00:00+02:00",
+  "sample_interval_seconds": 120,
+  "meter_model": "Cornet ED98QPro5G",
+  "meter_serial": "",
+  "room": "bedroom",
+  "position": "",
+  "height_cm": null,
+  "orientation": "",
+  "power_source": "",
+  "hold_or_power_interruptions": [],
+  "notes": ""
+}

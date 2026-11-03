@@ -1,0 +1,17 @@
+# Personal captures and metadata
+captures/
+data/incoming/
+data/private/
+*.log
+
+# Third-party installers and archives
+*.exe
+*.msi
+*.zip
+
+# Local tooling
+node_modules/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

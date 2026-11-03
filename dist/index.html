@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="תצוגת RF ממד Cornet עם זיהוי התאמה לתחומי 5G בישראל.">
+  <title>מדידות RF</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07110e;
+      --panel: #10221c;
+      --panel-soft: rgba(16, 34, 28, .74);
+      --line: rgba(211, 255, 228, .13);
+      --text: #f1faf5;
+      --muted: #9ab3a7;
+      --green: #4ee69a;
+      --green-soft: #a4f5c8;
+      --amber: #ffc86b;
+      --violet: #bba5ff;
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Arial, "Noto Sans Hebrew", system-ui, sans-serif;
+      font-variant-numeric: tabular-nums;
+      background:
+        radial-gradient(circle at 83% -8%, rgba(78,230,154,.15), transparent 31rem),
+        var(--bg);
+    }
+    button, input { font: inherit; }
+    a { color: var(--green-soft); }
+
+    .shell {
+      width: min(980px, calc(100% - 30px));
+      margin: 0 auto;
+      padding: 30px 0 50px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(78,230,154,.32);
+      border-radius: 13px;
+      background: rgba(78,230,154,.07);
+    }
+    .mark svg { width: 25px; }
+    .eyebrow { color: var(--green); font-size: .72rem; font-weight: 800; letter-spacing: .15em; direction: ltr; }
+    .local-chip { color: var(--muted); font-size: .76rem; }
+
+    .quick-facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0;
+    }
+    .fact {
+      min-height: 128px;
+      padding: 21px 23px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+    }
+    .fact-label { color: var(--muted); font-size: .78rem; }
+    .fact-value {
+      direction: ltr;
+      text-align: right;
+      margin: 14px 0 5px;
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: .95;
+      font-weight: 850;
+      letter-spacing: -.045em;
+    }
+    .fact.primary .fact-value { color: var(--amber); }
+    .fact.average .fact-value { color: var(--green-soft); }
+    .fact.frequency .fact-value { color: var(--violet); }
+    .fact-unit { color: var(--muted); font-size: .76rem; }
+
+    .chart-card {
+      padding: 23px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+    }
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+    h3 { margin: 0; font-size: 1rem; }
+    .subtle { margin-top: 5px; color: var(--muted); font-size: .75rem; line-height: 1.5; }
+    .legend { display: flex; gap: 13px; flex-wrap: wrap; color: var(--muted); font-size: .7rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .legend i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .legend .fiveg i { background: var(--violet); box-shadow: 0 0 8px rgba(187,165,255,.75); }
+    #chart { width: 100%; height: 245px; display: block; direction: ltr; margin-top: 14px; }
+    .grid { stroke: rgba(211,255,228,.09); stroke-width: 1; }
+    .area { fill: url(#area-fill); }
+    .line { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .point { fill: #07110e; stroke: var(--green-soft); stroke-width: 3; }
+    .point.fiveg { stroke: var(--violet); fill: #211a35; stroke-width: 4; }
+    .axis { fill: #87a095; font-size: 11px; }
+    .tag-bg { fill: #2b2342; stroke: rgba(187,165,255,.35); }
+    .tag-text { fill: #e5ddff; font-size: 10px; font-weight: 800; }
+
+    .reference-card {
+      margin-top: 14px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+    }
+    .reference-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .source-link { white-space: nowrap; font-size: .72rem; text-underline-offset: 3px; }
+    .attribution-note {
+      margin: 0 0 15px;
+      padding: 12px 14px;
+      color: #c9d7d0;
+      background: rgba(255,200,107,.055);
+      border-right: 2px solid var(--amber);
+      border-radius: 8px 0 0 8px;
+      font-size: .75rem;
+      line-height: 1.65;
+    }
+    .exposure-table { min-width: 680px; }
+    .exposure-table td:first-child {
+      width: 135px;
+      color: var(--amber);
+      font-weight: 800;
+      direction: ltr;
+      text-align: right;
+    }
+    .exposure-table td:last-child { color: #b5c9bf; line-height: 1.5; }
+
+    details {
+      margin-top: 14px;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: rgba(255,255,255,.018);
+    }
+    summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 17px 19px;
+      cursor: pointer;
+      list-style: none;
+      color: #dcebe3;
+      font-size: .84rem;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--green); font-size: 1.25rem; }
+    details[open] summary::after { content: "−"; }
+    .details-body { border-top: 1px solid var(--line); padding: 18px 19px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 560px; }
+    th, td { border-top: 1px solid var(--line); padding: 11px 8px; text-align: right; font-size: .77rem; }
+    th { color: var(--muted); font-weight: 600; }
+    td.numeric { direction: ltr; text-align: right; }
+    .band-badge { display: inline-block; padding: 4px 7px; border-radius: 7px; font-size: .67rem; }
+    .band-badge.fiveg { color: #e9e2ff; background: rgba(187,165,255,.12); }
+    .band-badge.shared { color: #d5e3dc; background: rgba(255,255,255,.06); }
+    .band-badge.other { color: var(--muted); }
+
+    .controls {
+      display: flex;
+      align-items: end;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 17px;
+    }
+    .upload, .download {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      padding: 0 14px;
+      cursor: pointer;
+    }
+    .upload { color: #032214; background: var(--green); border: 0; font-weight: 800; }
+    .upload input { display: none; }
+    .download { color: var(--text); border: 1px solid var(--line); background: transparent; }
+    .field { display: grid; gap: 5px; color: var(--muted); font-size: .68rem; }
+    .field input {
+      width: 98px;
+      height: 40px;
+      padding: 0 10px;
+      color: var(--text);
+      background: rgba(0,0,0,.14);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      direction: ltr;
+    }
+    #load-status { flex: 1 1 260px; color: var(--muted); font-size: .7rem; line-height: 1.45; }
+
+    .method {
+      margin-top: 15px;
+      padding: 0 4px;
+      color: #7f988c;
+      font-size: .69rem;
+      line-height: 1.65;
+    }
+    .method strong { color: #a9beb4; }
+    .method a { text-underline-offset: 2px; }
+
+    .tooltip {
+      position: fixed;
+      z-index: 20;
+      display: none;
+      min-width: 155px;
+      padding: 10px 12px;
+      color: var(--text);
+      background: #0b1a15;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.4);
+      pointer-events: none;
+      font-size: .74rem;
+      line-height: 1.55;
+      direction: rtl;
+    }
+
+    @media (max-width: 660px) {
+      .shell { width: min(100% - 20px, 980px); padding-top: 20px; }
+      .local-chip { display: none; }
+      .quick-facts { grid-template-columns: 1fr; gap: 8px; }
+      .fact { min-height: 108px; padding: 16px; }
+      .fact-value { font-size: 1.9rem; }
+      .chart-card { padding: 18px 14px; }
+      .reference-card { padding: 18px 14px; }
+      .reference-head { display: block; }
+      .source-link { display: inline-block; margin-top: 8px; }
+      .card-head { display: block; }
+      .legend { margin-top: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="2.6" fill="#4ee69a"/>
+            <path d="M10.8 10.8a7.35 7.35 0 0 0 0 10.4M21.2 10.8a7.35 7.35 0 0 1 0 10.4M6.6 6.6a13.3 13.3 0 0 0 0 18.8M25.4 6.6a13.3 13.3 0 0 1 0 18.8" stroke="#9af5c3" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="eyebrow">מדידות RF</div>
+        </div>
+      </div>
+      <div class="local-chip">הקובץ נשאר בדפדפן</div>
+    </header>
+
+    <section class="quick-facts" aria-label="נתוני המדידה">
+      <article class="fact primary">
+        <div class="fact-label">שיא RF</div>
+        <div class="fact-value" id="peak-value">246.5</div>
+        <div class="fact-unit">mW/m²</div>
+      </article>
+      <article class="fact average">
+        <div class="fact-label">ממוצע RF</div>
+        <div class="fact-value" id="average-value">53.97</div>
+        <div class="fact-unit">mW/m²</div>
+      </article>
+      <article class="fact frequency">
+        <div class="fact-label">תדר בשיא</div>
+        <div class="fact-value" id="peak-frequency">3504</div>
+        <div class="fact-unit">MHz · <span id="peak-band">5G בישראל</span></div>
+      </article>
+      <article class="fact">
+        <div class="fact-label">מספר קריאות</div>
+        <div class="fact-value" id="sample-count">5</div>
+        <div class="fact-unit" id="duration">40 שניות</div>
+      </article>
+    </section>
+
+    <section class="chart-card">
+      <div class="card-head">
+        <div>
+          <h3>RF לאורך זמן</h3>
+          <div class="subtle">mW/m² · סולם לוגריתמי</div>
+        </div>
+        <div class="legend" aria-label="מקרא">
+          <span class="fiveg"><i></i>תחום 5G</span>
+          <span><i></i>קריאה אחרת</span>
+        </div>
+      </div>
+      <svg id="chart" viewBox="0 0 820 245" role="img" aria-label="גרף RF לאורך ההקלטה"></svg>
+    </section>
+
+    <section class="reference-card" aria-label="טבלת רמות החשיפה של עמיר בורנשטיין">
+      <div class="reference-head">
+        <div>
+          <h3>טבלת רמות חשיפה לקרינת רדיו — עמיר בורנשטיין</h3>
+          <div class="subtle">mW/m²</div>
+        </div>
+        <a class="source-link" href="https://www.norad4u.co.il/emr-measurement-h/emf-standards-h/rf-standards/" target="_blank" rel="noreferrer">לטבלה המקורית</a>
+      </div>
+      <p class="attribution-note">מקור: עמיר בורנשטיין. לפי המקור, להמלצות האישיות בטבלה אין תוקף חוקי והן אינן קונצנזוס רגולטורי.</p>
+      <div class="table-wrap">
+        <table class="exposure-table">
+          <thead><tr><th>mW/m²</th><th>מקור / סיווג</th><th>תיאור במקור</th></tr></thead>
+          <tbody>
+            <tr><td>4,000–10,000</td><td>ICNIRP</td><td>חשיפה אקוטית</td></tr>
+            <tr><td>400–1,000</td><td>ישראל</td><td>סף סביבתי</td></tr>
+            <tr><td>10</td><td>רם דישון / No Rad</td><td>המלצה / התחלת מיגון חלקי</td></tr>
+            <tr><td>1</td><td>מועצת אירופה · BioInitiative 2007 · זלצבורג</td><td>No Rad: כאב מיידי</td></tr>
+            <tr><td>0.05</td><td>No Rad</td><td>חוסר נוחות ראשוני · גבול אישי לחשיפה ממושכת</td></tr>
+            <tr><td>&lt; 0.04</td><td>No Rad</td><td>פשרה לחדרי שינה ומקומות עבודה</td></tr>
+            <tr><td>0.03</td><td>BioInitiative 2012</td><td>Lowest Observed Effect Level לפי המקור</td></tr>
+            <tr><td>0.001–0.0001</td><td>Building Biology</td><td>השפעות קלות</td></tr>
+            <tr><td>&lt; 0.0005</td><td>No Rad</td><td>המלצה לרגישים לקרינה</td></tr>
+            <tr><td>&lt; 0.0001</td><td>Building Biology</td><td>ללא השפעות</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <details>
+      <summary>נתונים מלאים וטעינת קובץ</summary>
+      <div class="details-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>זמן יחסי</th><th>RF (mW/m²)</th><th>תדר</th><th>סיווג</th></tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="controls">
+          <label class="upload">טעינת קובץ Cornet<input id="file-input" type="file" accept=".csv,.txt,text/csv,text/plain"></label>
+          <label class="field">מרווח דגימה<input id="interval" type="number" min="1" max="86400" step="1" value="10" aria-label="מרווח דגימה בשניות"></label>
+          <button class="download" id="download" type="button">הורדת CSV</button>
+          <div id="load-status">נטענת בדיקת ברירת המחדל מ־03.11.2026.</div>
+        </div>
+      </div>
+    </details>
+
+    <footer class="method">מקורות: <a href="https://www.norad4u.co.il/emr-measurement-h/emf-standards-h/rf-standards/" target="_blank" rel="noreferrer">עמיר בורנשטיין — טבלת RF</a> · <a href="https://www.gov.il/BlobFolder/policy/pelephone/he/pelephone_license_290326.pdf" target="_blank" rel="noreferrer">משרד התקשורת — תחומי 5G</a></footer>
+  </main>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const initialNewestFirst = [
+      { value: 0.916, frequency: 2416 },
+      { value: 3.483, frequency: 2523 },
+      { value: 9.81, frequency: 2526 },
+      { value: 9.16, frequency: 2532 },
+      { value: 246.5, frequency: 3504 }
+    ];
+
+    let readings = [...initialNewestFirst].reverse();
+    let sourceName = "בדיקת ברירת המחדל מ־03.11.2026";
+    const $ = (selector) => document.querySelector(selector);
+
+    function bandFor(frequency) {
+      if (frequency >= 3500 && frequency <= 3800) return { type: "fiveg", label: "תחום 5G · 3.5 GHz" };
+      if (frequency >= 24250 && frequency <= 27500) return { type: "fiveg", label: "תחום 5G · 26 GHz" };
+      if (frequency >= 2500 && frequency <= 2690) return { type: "shared", label: "תחום משותף 4G/5G" };
+      if (frequency >= 694 && frequency <= 803) return { type: "shared", label: "תחום משותף 4G/5G" };
+      return { type: "other", label: "לא מסווג כ־5G" };
+    }
+
+    function fmt(value) {
+      if (!Number.isFinite(value)) return "—";
+      if (value >= 100) return value.toFixed(1).replace(/\.0$/, "");
+      if (value >= 10) return value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+      if (value >= 1) return value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+      return value.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    function intervalSeconds() { return Number($("#interval").value) || 10; }
+
+    function relative(index) {
+      const seconds = (readings.length - 1 - index) * intervalSeconds();
+      if (!seconds) return "סיום";
+      if (seconds < 60) return `לפני ${seconds} שנ׳`;
+      const minutes = seconds / 60;
+      if (minutes < 60) return `לפני ${Number.isInteger(minutes) ? minutes : minutes.toFixed(1)} דק׳`;
+      const hours = minutes / 60;
+      return `לפני ${Number.isInteger(hours) ? hours : hours.toFixed(1)} שע׳`;
+    }
+
+    function durationLabel() {
+      const seconds = Math.max(0, readings.length - 1) * intervalSeconds();
+      if (seconds < 60) return `${seconds} שניות`;
+      if (seconds < 3600) return `${Math.round(seconds / 60)} דקות`;
+      return `${(seconds / 3600).toFixed(1)} שעות`;
+    }
+
+    function renderSummary() {
+      const peak = [...readings].sort((a, b) => b.value - a.value)[0];
+      const average = readings.reduce((sum, item) => sum + item.value, 0) / readings.length;
+      const peakBand = bandFor(peak.frequency);
+      $("#peak-value").textContent = fmt(peak.value);
+      $("#peak-frequency").textContent = peak.frequency;
+      $("#peak-band").textContent = peakBand.label;
+      $("#sample-count").textContent = readings.length;
+      $("#average-value").textContent = fmt(average);
+      $("#duration").textContent = durationLabel();
+    }
+
+    function renderChart() {
+      const svg = $("#chart");
+      const width = 820, height = 245;
+      const margin = { top: 34, right: 16, bottom: 34, left: 16 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+      const logs = readings.map((item) => Math.log10(Math.max(item.value, 0.000001)));
+      const minLog = Math.floor(Math.min(...logs));
+      const maxLog = Math.max(minLog + 1, Math.ceil(Math.max(...logs)));
+      const x = (index) => margin.left + (readings.length === 1 ? innerW / 2 : index * innerW / (readings.length - 1));
+      const y = (value) => margin.top + (maxLog - Math.log10(Math.max(value, .000001))) / (maxLog - minLog) * innerH;
+      const points = readings.map((item, index) => `${x(index)},${y(item.value)}`).join(" ");
+      const areaPath = readings.length > 1 ? `M ${x(0)} ${height - margin.bottom} L ${points.replaceAll(" ", " L ")} L ${x(readings.length - 1)} ${height - margin.bottom} Z` : "";
+      let grid = "";
+      for (let power = minLog; power <= maxLog; power += 1) {
+        const pos = y(10 ** power);
+        grid += `<line class="grid" x1="${margin.left}" y1="${pos}" x2="${width - margin.right}" y2="${pos}" />`;
+      }
+      const markers = readings.map((item, index) => {
+        const isFiveG = bandFor(item.frequency).type === "fiveg";
+        const tag = isFiveG ? `<rect class="tag-bg" x="${x(index) - 22}" y="${Math.max(2, y(item.value) - 31)}" width="44" height="19" rx="8"/><text class="tag-text" x="${x(index)}" y="${Math.max(15, y(item.value) - 18)}" text-anchor="middle">5G</text>` : "";
+        return `${tag}<circle class="point${isFiveG ? " fiveg" : ""}" cx="${x(index)}" cy="${y(item.value)}" r="6" data-index="${index}" tabindex="0" />`;
+      }).join("");
+      svg.innerHTML = `
+        <defs><linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4ee69a" stop-opacity=".22"/><stop offset="1" stop-color="#4ee69a" stop-opacity="0"/></linearGradient></defs>
+        ${grid}${areaPath ? `<path class="area" d="${areaPath}"/>` : ""}<polyline class="line" points="${points}"/>${markers}
+        <text class="axis" x="${margin.left}" y="${height - 9}" text-anchor="start">תחילת ההקלטה</text>
+        <text class="axis" x="${width - margin.right}" y="${height - 9}" text-anchor="end">סיום</text>`;
+      svg.querySelectorAll(".point").forEach((point) => {
+        const show = (event) => showTooltip(event, Number(point.dataset.index));
+        point.addEventListener("mouseenter", show);
+        point.addEventListener("mousemove", show);
+        point.addEventListener("focus", show);
+        point.addEventListener("mouseleave", hideTooltip);
+        point.addEventListener("blur", hideTooltip);
+      });
+    }
+
+    function showTooltip(event, index) {
+      const item = readings[index];
+      const band = bandFor(item.frequency);
+      const tip = $("#tooltip");
+      tip.innerHTML = `<strong>${fmt(item.value)} mW/m²</strong><br>${relative(index)}${band.type === "fiveg" ? " · בתחום 5G" : ""}`;
+      tip.style.display = "block";
+      const rect = event.target.getBoundingClientRect();
+      const px = event.clientX || rect.left + rect.width / 2;
+      const py = event.clientY || rect.top;
+      tip.style.left = `${Math.min(window.innerWidth - 170, Math.max(10, px - 70))}px`;
+      tip.style.top = `${Math.max(10, py - 75)}px`;
+    }
+    function hideTooltip() { $("#tooltip").style.display = "none"; }
+
+    function renderRows() {
+      $("#rows").innerHTML = readings.map((item, index) => {
+        const band = bandFor(item.frequency);
+        return `<tr><td class="numeric">${index + 1}</td><td>${relative(index)}</td><td class="numeric">${fmt(item.value)}</td><td class="numeric">${item.frequency} MHz</td><td><span class="band-badge ${band.type}">${band.label}</span></td></tr>`;
+      }).join("");
+    }
+
+    function render() { renderSummary(); renderChart(); renderRows(); }
+
+    function parseCornet(text) {
+      const parsed = [];
+      for (const rawLine of text.replace(/^\uFEFF/, "").split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line || /^P\d+/i.test(line) || /^RF/i.test(line)) continue;
+        const parts = line.split(/[;,\t]/).map((part) => part.trim());
+        const value = Number(parts[0]);
+        const frequency = Number(parts[1]);
+        if (Number.isFinite(value) && Number.isFinite(frequency) && frequency > 0) parsed.push({ value, frequency });
+      }
+      return parsed.reverse();
+    }
+
+    $("#file-input").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      try {
+        const parsed = parseCornet(await file.text());
+        if (!parsed.length) throw new Error("לא נמצאו קריאות תקינות");
+        readings = parsed;
+        sourceName = file.name;
+        $("#load-status").textContent = `${parsed.length} קריאות נטענו מתוך ${file.name}; הקובץ לא נשלח לשרת.`;
+        render();
+      } catch (error) {
+        $("#load-status").textContent = `לא הצלחתי לקרוא את הקובץ: ${error.message}`;
+      }
+    });
+    $("#interval").addEventListener("input", render);
+    $("#download").addEventListener("click", () => {
+      const lines = ["index,relative_seconds,rf_mw_m2,frequency_mhz,israel_band_class"];
+      readings.forEach((item, index) => lines.push(`${index + 1},${-((readings.length - 1 - index) * intervalSeconds())},${item.value},${item.frequency},${bandFor(item.frequency).type}`));
+      const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "cornet-rf-classified.csv";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
+
+    render();
+  </script>
+</body>
+</html>
