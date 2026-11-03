@@ -12,7 +12,7 @@ const samplePath = path.join(root, "data", "example-flash.csv");
 const html = fs.readFileSync(htmlPath, "utf8");
 assert.match(html, /<title>מדידות RF<\/title>/, "The page title is missing or unexpected");
 
-for (const id of ["peak-value", "average-value", "peak-frequency", "sample-count", "file-input", "interval"]) {
+for (const id of ["peak-value", "average-value", "peak-frequency", "sample-count", "file-input", "start-time", "interval"]) {
   assert.match(html, new RegExp(`id=["']${id}["']`), `Missing required element: ${id}`);
 }
 
@@ -43,6 +43,13 @@ const peak = sample.reduce((best, item) => item.value > best.value ? item : best
 assert.deepEqual(peak, { value: 246.5, frequency: 3504 });
 const average = sample.reduce((sum, item) => sum + item.value, 0) / sample.length;
 assert.ok(Math.abs(average - 53.9738) < 1e-9, "Unexpected example average");
+
+const startMatch = html.match(/id=["']start-time["'][^>]*value=["']([^"']+)["']/);
+assert.ok(startMatch, "The bundled measurement needs a default start time");
+const start = new Date(startMatch[1]);
+const end = new Date(start.getTime() + (sample.length - 1) * 10 * 1000);
+assert.equal(end.getTime() - start.getTime(), 40_000, "The bundled timestamps should span 40 seconds");
+assert.match(html, /timestamp_iso/, "CSV export should include absolute timestamps");
 
 const requiredDocs = [
   "INSTALLATION.md",

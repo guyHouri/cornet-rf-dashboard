@@ -209,6 +209,7 @@
       border-radius: 10px;
       direction: ltr;
     }
+    .field.time input { width: 205px; }
     #load-status { flex: 1 1 260px; color: var(--muted); font-size: .7rem; line-height: 1.45; }
 
     .method {
@@ -341,16 +342,17 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>#</th><th>זמן יחסי</th><th>RF (mW/m²)</th><th>תדר</th><th>סיווג</th></tr>
+              <tr><th>#</th><th>תאריך ושעה</th><th>זמן יחסי</th><th>RF (mW/m²)</th><th>תדר</th><th>סיווג</th></tr>
             </thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
         <div class="controls">
           <label class="upload">טעינת קובץ Cornet<input id="file-input" type="file" accept=".csv,.txt,text/csv,text/plain"></label>
+          <label class="field time">תחילת המדידה<input id="start-time" type="datetime-local" step="1" value="2026-11-03T11:20:40" aria-label="תאריך ושעת תחילת המדידה"></label>
           <label class="field">מרווח דגימה<input id="interval" type="number" min="1" max="86400" step="1" value="10" aria-label="מרווח דגימה בשניות"></label>
           <button class="download" id="download" type="button">הורדת CSV</button>
-          <div id="load-status">נטענת בדיקת ברירת המחדל מ־03.11.2026.</div>
+          <div id="load-status">נטענת בדיקת ברירת המחדל מ־03.11.2026. זמן ההתחלה 11:20:40 משוער לפי תחילת ייצוא הקובץ.</div>
         </div>
       </div>
     </details>
@@ -390,6 +392,37 @@
     }
 
     function intervalSeconds() { return Number($("#interval").value) || 10; }
+
+    function startDate() {
+      const value = $("#start-time").value;
+      if (!value) return null;
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    function measurementDate(index) {
+      const start = startDate();
+      return start ? new Date(start.getTime() + index * intervalSeconds() * 1000) : null;
+    }
+
+    function absoluteTime(index, compact = false) {
+      const date = measurementDate(index);
+      if (!date) return "לא הוזן";
+      return new Intl.DateTimeFormat("he-IL", compact
+        ? { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }
+        : { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false }
+      ).format(date);
+    }
+
+    function localIso(index) {
+      const date = measurementDate(index);
+      if (!date) return "";
+      const pad = (value) => String(value).padStart(2, "0");
+      const offsetMinutes = -date.getTimezoneOffset();
+      const sign = offsetMinutes >= 0 ? "+" : "-";
+      const offset = `${sign}${pad(Math.floor(Math.abs(offsetMinutes) / 60))}:${pad(Math.abs(offsetMinutes) % 60)}`;
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}${offset}`;
+    }
 
     function relative(index) {
       const seconds = (readings.length - 1 - index) * intervalSeconds();
@@ -446,8 +479,8 @@
       svg.innerHTML = `
         <defs><linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4ee69a" stop-opacity=".22"/><stop offset="1" stop-color="#4ee69a" stop-opacity="0"/></linearGradient></defs>
         ${grid}${areaPath ? `<path class="area" d="${areaPath}"/>` : ""}<polyline class="line" points="${points}"/>${markers}
-        <text class="axis" x="${margin.left}" y="${height - 9}" text-anchor="start">תחילת ההקלטה</text>
-        <text class="axis" x="${width - margin.right}" y="${height - 9}" text-anchor="end">סיום</text>`;
+        <text class="axis" x="${margin.left}" y="${height - 9}" text-anchor="start">${startDate() ? absoluteTime(0, true) : "תחילת ההקלטה"}</text>
+        <text class="axis" x="${width - margin.right}" y="${height - 9}" text-anchor="end">${startDate() ? absoluteTime(readings.length - 1, true) : "סיום"}</text>`;
       svg.querySelectorAll(".point").forEach((point) => {
         const show = (event) => showTooltip(event, Number(point.dataset.index));
         point.addEventListener("mouseenter", show);
@@ -462,7 +495,7 @@
       const item = readings[index];
       const band = bandFor(item.frequency);
       const tip = $("#tooltip");
-      tip.innerHTML = `<strong>${fmt(item.value)} mW/m²</strong><br>${relative(index)}${band.type === "fiveg" ? " · בתחום 5G" : ""}`;
+      tip.innerHTML = `<strong>${fmt(item.value)} mW/m²</strong><br>${absoluteTime(index)}<br>${relative(index)}${band.type === "fiveg" ? " · בתחום 5G" : ""}`;
       tip.style.display = "block";
       const rect = event.target.getBoundingClientRect();
       const px = event.clientX || rect.left + rect.width / 2;
@@ -475,7 +508,7 @@
     function renderRows() {
       $("#rows").innerHTML = readings.map((item, index) => {
         const band = bandFor(item.frequency);
-        return `<tr><td class="numeric">${index + 1}</td><td>${relative(index)}</td><td class="numeric">${fmt(item.value)}</td><td class="numeric">${item.frequency} MHz</td><td><span class="band-badge ${band.type}">${band.label}</span></td></tr>`;
+        return `<tr><td class="numeric">${index + 1}</td><td class="numeric">${absoluteTime(index)}</td><td>${relative(index)}</td><td class="numeric">${fmt(item.value)}</td><td class="numeric">${item.frequency} MHz</td><td><span class="band-badge ${band.type}">${band.label}</span></td></tr>`;
       }).join("");
     }
 
@@ -502,16 +535,18 @@
         if (!parsed.length) throw new Error("לא נמצאו קריאות תקינות");
         readings = parsed;
         sourceName = file.name;
-        $("#load-status").textContent = `${parsed.length} קריאות נטענו מתוך ${file.name}; הקובץ לא נשלח לשרת.`;
+        $("#start-time").value = "";
+        $("#load-status").textContent = `${parsed.length} קריאות נטענו מתוך ${file.name}; הזן את שעת תחילת המדידה. הקובץ לא נשלח לשרת.`;
         render();
       } catch (error) {
         $("#load-status").textContent = `לא הצלחתי לקרוא את הקובץ: ${error.message}`;
       }
     });
     $("#interval").addEventListener("input", render);
+    $("#start-time").addEventListener("input", render);
     $("#download").addEventListener("click", () => {
-      const lines = ["index,relative_seconds,rf_mw_m2,frequency_mhz,israel_band_class"];
-      readings.forEach((item, index) => lines.push(`${index + 1},${-((readings.length - 1 - index) * intervalSeconds())},${item.value},${item.frequency},${bandFor(item.frequency).type}`));
+      const lines = ["index,timestamp_iso,relative_seconds,rf_mw_m2,frequency_mhz,israel_band_class"];
+      readings.forEach((item, index) => lines.push(`${index + 1},${localIso(index)},${-((readings.length - 1 - index) * intervalSeconds())},${item.value},${item.frequency},${bandFor(item.frequency).type}`));
       const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
