@@ -54,6 +54,7 @@ assert.match(html, /timestamp_iso/, "CSV export should include absolute timestam
 const requiredDocs = [
   "INSTALLATION.md",
   "RECORDING-GUIDE.md",
+  "CAPACITY-AND-INTERVALS.md",
   "EXPORT-AND-DASHBOARD.md",
   "TROUBLESHOOTING.md",
   "SOFTWARE.md",

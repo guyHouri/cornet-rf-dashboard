@@ -19,6 +19,7 @@
 
 - [התקנה וזיהוי הדרייבר](docs/INSTALLATION.md)
 - [הקלטה עצמאית ל־24 שעות](docs/RECORDING-GUIDE.md)
+- [קיבולת הזיכרון ובחירת מרווח דגימה](docs/CAPACITY-AND-INTERVALS.md)
 - [ייצוא עם Tera Term וטעינה לדשבורד](docs/EXPORT-AND-DASHBOARD.md)
 - [פתרון תקלות](docs/TROUBLESHOOTING.md)
 - [תוכנות, מקורות וגרסאות](docs/SOFTWARE.md)
@@ -41,7 +42,8 @@
 - ייצוא `FlashMem` אינו מכיל חותמת זמן מלאה לכל שורה. יש לרשום בנפרד את שעת ההתחלה ושעת הסיום.
 - לפי מדריך Cornet, ה־FlashMem נשלח מהקריאה החדשה לישנה. הדשבורד הופך את הסדר לתצוגה כרונולוגית.
 - כל דגימה היא המקסימום שנמדד בתוך חלון הזמן, לא ממוצע של החלון.
-- זיכרון של כ־1,000 נקודות במרווח 2 דקות מכסה כ־33 שעות ו־20 דקות; 24 שעות הן 720 נקודות.
+- ב־ED98QPro5G יש 1,024 נקודות ב־Buffer ועוד 1,024 ב־FlashMem, אך ה־Flash הוא צילום נפרד ואינו מרחיב אוטומטית סשן ללא השגחה. לתכנון סשן רציף משתמשים ב־1,024 נקודות.
+- במרווח 2 דקות, 1,024 נקודות מכסות 34 שעות ו־8 דקות; 24 שעות צורכות 720 נקודות.
 - זו תצוגת נתוני מכשיר, לא קביעה רפואית ולא מדידת מעבדה מכוילת.
 
 ## מבנה הפרויקט
@@ -67,6 +69,7 @@ powershell -ExecutionPolicy Bypass -File tools/check-windows-setup.ps1
 ## מקורות מרכזיים
 
 - [מדריך Data Logging של Cornet ED88TPlus](https://www.maxicom.se/res/Textfiler/ED88TPlus-Data-Logging.pdf)
+- [מדריך Data Logging הרשמי של Cornet ED98QPro5G v2.0](https://electrosmog.org/resources/ED98QPro5G%20Data%20Logging-v2.0.pdf)
 - [Tera Term — האתר הרשמי](https://teratermproject.github.io/index-en/)
 - [Tera Term — גרסאות רשמיות ב־GitHub](https://github.com/TeraTermProject/teraterm/releases)
 - [WCH — דרייבר CH340/CH341 הרשמי](https://www.wch.cn/downloads/CH341SER_EXE.html)
