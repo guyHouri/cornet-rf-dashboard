@@ -18,6 +18,25 @@
 
 המספר שמור בהגדרה ישנה. חבר את המכשיר, מצא את ה־COM הנוכחי ב־Device Manager ובחר אותו ב־Tera Term. מספר ה־COM יכול להשתנות.
 
+## EnviroSens מציגה “meter found on COM3” ואז שגיאת COM1
+
+התקלה שוחזרה עם ED98QPro5G שהיה מחובר בפועל כ־`USB-SERIAL CH340 (COM6)`:
+
+1. `Logg time` במכשיר היה `1 ms`.
+2. במרווח 1 ms הקורנט מציג `NoRealtime` ואינו שולח את זרם ה־Realtime הרגיל.
+3. מנגנון `Search Device` של EnviroSens לא קיבל handshake תקין, אך במקום להציג “לא נמצא מכשיר” הציג `meter found on COM3`.
+4. לאחר מכן `Start Recording` ניסה לפתוח `COM1` והחזיר `The port 'COM1' does not exist`.
+
+הפתרון שאומת במחשב שלנו:
+
+1. ב־Cornet שנה `Logg time` מ־`1 ms` ל־`0.5 sec`.
+2. בחר `Save config` וצא לחלוטין מ־Logger Setup למסך RF הרגיל.
+3. ודא ש־`Data2Send = RealTime` ולא `NoRealtime`, `Buffer` או `FlashMem`.
+4. סגור ופתח מחדש את EnviroSens ולחץ `Search Device`.
+5. התוכנה אמורה לזהות את יציאת Windows האמיתית; בבדיקה שלנו היא זיהתה נכון `COM6` והתחילה לקבל נתונים.
+
+`NoRealtime` אינו דרייבר חסר ואינו יציאת COM אחרת. זהו מצב של הקורנט שבו Realtime אינו זמין במרווח 1 ms. למרות זאת, הצגת COM3 וניסיון לפתוח COM1 הם התנהגות מטעה של EnviroSens כאשר לא מגיע זרם זיהוי.
+
 ## Access denied / Cannot open COM
 
 סגור את Monitoring, חלונות Tera Term אחרים ותוכנות Serial. נתק וחבר מחדש. יציאת COM ננעלת בדרך כלל בידי תוכנה אחת בכל פעם.
@@ -53,7 +72,7 @@ Tera Term אינו אמור להציג נתונים לפני שה־Cornet שול
 
 ## התוכנה מזהה מכשיר גם כשהכול מנותק
 
-אל תסתמך על הכיתוב בלבד. אמת באמצעות Device Manager: נתק וחבר וצפה באיזה התקן נעלם וחוזר. תוכנת Monitoring הישנה עשויה להציג COM או דגם מהגדרה שמורה.
+אל תסתמך על הכיתוב בלבד. אמת באמצעות Device Manager: נתק וחבר וצפה באיזה התקן נעלם וחוזר. אם EnviroSens מציגה COM שאינו קיים, בדוק קודם שהקורנט אינו ב־`NoRealtime` בגלל מרווח `1 ms`, והעבר זמנית ל־`0.5 sec`.
 
 ## בדיקה אוטומטית לקריאה בלבד
 

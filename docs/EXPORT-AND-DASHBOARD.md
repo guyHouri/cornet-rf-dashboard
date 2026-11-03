@@ -91,4 +91,8 @@ timestamp(i) = start_time + i × interval
 
 ## תוכנת Monitoring הישנה
 
-`Monitoring.exe` של EnviroSens יכולה להציג נתונים חיים, אך בבדיקה היא הציגה יציאות COM שמורות ואף נראתה כאילו מצאה מכשיר כשהוא נותק. לכן ההליך המתועד בפרויקט משתמש ב־Tera Term לייצוא גולמי. אין ללחוץ `Start Recording` בתוכנת Monitoring אם המטרה היא לייצא הקלטה שכבר נשמרה במכשיר.
+`Monitoring.exe` של EnviroSens יכולה להציג ולהקליט נתונים חיים. היא אומתה אצלנו עם ED98QPro5G על `COM6` כאשר `Logg time = 0.5 sec`, המכשיר היה ב־`Data2Send = RealTime` ויצאנו מ־Logger Setup למסך RF.
+
+כאשר `Logg time = 1 ms`, הקורנט מציג `NoRealtime`. במצב הזה EnviroSens לא קיבלה handshake, הציגה בטעות `meter found on COM3`, ולאחר מכן ניסתה לפתוח `COM1`. מעבר ל־`0.5 sec` החזיר את Realtime והתוכנה זיהתה נכון את COM6. ראה [פתרון תקלות](TROUBLESHOOTING.md#envirosens-מציגה-meter-found-on-com3-ואז-שגיאת-com1).
+
+לייצוא גולמי של הקלטה שכבר נמצאת ב־FlashMem אנחנו עדיין משתמשים ב־Tera Term, משום שהוא שומר ישירות את פלט ה־Serial. אין ללחוץ `Start Recording` ב־EnviroSens אם המטרה היא רק לייצא הקלטה קיימת; יש לבחור במכשיר `Data2Send = FlashMem` ולשלוח אותה לפי ההליך המתועד לעיל.

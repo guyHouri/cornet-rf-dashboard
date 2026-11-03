@@ -12,7 +12,7 @@
 ## מה לא נדרש
 
 - TeraBox — שירות אחסון ענן שאינו קשור לתקשורת Serial.
-- EnviroSens Monitoring לצורך ייצוא FlashMem — אפשר להשתמש ב־Tera Term, שהוא פשוט ושקוף יותר.
+- EnviroSens Monitoring לצורך ייצוא FlashMem — אפשר להשתמש ב־Tera Term, שהוא פשוט ושקוף יותר. להקלטת Realtime, EnviroSens עבדה אצלנו על COM6 לאחר הגדרת `Logg time = 0.5 sec` ו־`Data2Send = RealTime`; היא אינה מזהה נכון את המד כשהוא מציג `NoRealtime` במרווח 1 ms.
 - FTDI CDM21228 — אלא אם Device Manager מזהה בפועל שבב FTDI.
 
 ## גרסאות שאומתו במחשב הבדיקה
